@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>认知功能测试</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one narrow reading column; the quiz is a single focused card, results read top-down from type to detail. */
+:root {
+  --bg: #eef0f6;
+  --surface: #ffffff;
+  --ink: #1c2133;
+  --muted: #5f667c;
+  --line: #dcdfea;
+  --accent: #3546c4;
+  --accent-soft: #e4e7fa;
+  --weak: #b4495a;
+  --weak-soft: #f7e6e9;
+  --nt: #5a49c2; --nf: #1d8466; --sj: #a8741a; --sp: #c9503c;
+  --font-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11131b; --surface: #1a1d29; --ink: #e7e9f2; --muted: #9ba1b6; --line: #2b3042;
+    --accent: #8f9cff; --accent-soft: #252a48; --weak: #e48b98; --weak-soft: #3a2229;
+    --nt: #9d8ff0; --nf: #4fc29f; --sj: #e0ad55; --sp: #f08672;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11131b; --surface: #1a1d29; --ink: #e7e9f2; --muted: #9ba1b6; --line: #2b3042;
+  --accent: #8f9cff; --accent-soft: #252a48; --weak: #e48b98; --weak-soft: #3a2229;
+  --nt: #9d8ff0; --nf: #4fc29f; --sj: #e0ad55; --sp: #f08672;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.7; }
+main { max-width: 780px; margin: 0 auto; padding: 40px 18px 80px; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: 34px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px; display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 12px 18px; transition: border-color .15s, background .15s; }
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+:root[data-theme="dark"] .primary { color: #11131b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .primary { color: #11131b; } }
+.primary:hover { filter: brightness(1.08); }
+.ghost { background: transparent; }
+
+/* Home */
+.intro { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: 13px; letter-spacing: 3px; color: var(--accent); font-weight: 700; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.fact { border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; }
+.fact b { display: block; font-size: 22px; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.type-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; }
+.type-btn .emoji { font-size: 28px; line-height: 1.2; }
+.type-btn .code { font-weight: 700; letter-spacing: 1px; }
+.type-btn .nick { font-size: 12px; color: var(--muted); }
+.group-NT { border-top: 3px solid var(--nt); } .group-NF { border-top: 3px solid var(--nf); }
+.group-SJ { border-top: 3px solid var(--sj); } .group-SP { border-top: 3px solid var(--sp); }
+
+/* Quiz */
+.progress-text { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+.question { font-size: 21px; font-family: var(--font-display); min-height: 3.4em; }
+.likert { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.likert button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 4px; }
+.likert .num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.likert .lab { font-size: 12px; color: var(--muted); }
+.choice { display: flex; flex-direction: column; gap: 10px; }
+.choice button { text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; }
+.choice .letter { font-weight: 700; color: var(--accent); }
+.selected { border-color: var(--accent); background: var(--accent-soft); }
+.hint { font-size: 13px; color: var(--muted); }
+
+/* Results */
+.hero { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+.medal { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 62px; border: 4px solid var(--g); background: color-mix(in srgb, var(--g) 14%, var(--surface)); }
+.hero .code { font-family: var(--font-display); font-size: 40px; letter-spacing: 3px; line-height: 1.1; }
+.hero .nick { font-size: 18px; color: var(--g); font-weight: 700; }
+.stack { font-variant-numeric: tabular-nums; color: var(--muted); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: 13px; padding: 3px 12px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); }
+.chip.weak { background: var(--weak-soft); color: var(--weak); }
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 112px 1fr 40px; gap: 12px; align-items: center; }
+.bar-row .name { font-size: 14px; }
+.bar-row .name b { font-variant-numeric: tabular-nums; margin-right: 4px; }
+.bar-bg { height: 14px; background: var(--accent-soft); border-radius: 7px; overflow: hidden; }
+.bar { height: 100%; border-radius: 7px; background: color-mix(in srgb, var(--accent) 45%, var(--surface)); }
+.bar.top { background: var(--accent); }
+.bar.low { background: var(--weak); }
+.bar-row .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.box { border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.box.good { background: var(--accent-soft); }
+.box.bad { background: var(--weak-soft); }
+.box h3 { font-size: 16px; }
+.box .def { font-size: 13px; color: var(--muted); }
+.item b { margin-right: 6px; }
+.others { display: flex; gap: 10px; flex-wrap: wrap; }
+.mini { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); }
+.mini .emoji { font-size: 24px; }
+.mini .pct { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.warn { border-left: 4px solid var(--sj); padding: 10px 14px; background: color-mix(in srgb, var(--sj) 10%, var(--surface)); border-radius: 0 10px 10px 0; font-size: 14px; }
+.roles { display: flex; flex-direction: column; gap: 12px; }
+.role { display: grid; grid-template-columns: 64px 1fr; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.role .slot { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background: var(--accent-soft); color: var(--accent); }
+.role.inferior .slot { background: var(--weak-soft); color: var(--weak); }
+.role .slot b { font-size: 20px; }
+.role .slot span { font-size: 11px; }
+.role .title { font-weight: 700; }
+.role .score { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; font-size: 14px; }
+.role p { font-size: 14px; }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 14px; }
+.legend div { padding: 8px 12px; border-radius: 10px; background: var(--bg); }
+.note { font-size: 13px; color: var(--muted); text-align: center; }
+.copied { font-size: 13px; color: var(--nf); align-self: center; }
+
+@media (max-width: 560px) {
+  h1 { font-size: 28px; }
+  .facts { grid-template-columns: 1fr; }
+  .type-grid { grid-template-columns: repeat(2, 1fr); }
+  .likert { grid-template-columns: 1fr; }
+  .likert button { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 10px 14px; }
+  .hero { grid-template-columns: 1fr; justify-items: start; }
+  .two, .legend { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 96px 1fr 34px; }
+  .panel { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+const D = {"functions": ["Se", "Si", "Ne", "Ni", "Te", "Ti", "Fe", "Fi"], "info": {"Se": {"name": "外倾感觉", "strong": "活在当下，对环境和细节反应敏锐，行动力强", "blind": "容易忽略眼前的细节和身体感受，有时显得不够“接地气”"}, "Si": {"name": "内倾感觉", "strong": "依靠过去的经验，稳定、可靠、重视习惯和规律", "blind": "不太借鉴过去的经验，容易重复踩坑，也不太在意规律和细节"}, "Ne": {"name": "外倾直觉", "strong": "联想丰富，善于发现各种可能性和新点子", "blind": "容易只看到一种做法，对新的可能性不够开放"}, "Ni": {"name": "内倾直觉", "strong": "能透过表象看本质，对事情的走向有很强的预感", "blind": "不太去想长远的方向和深层含义，容易被眼前的事牵着走"}, "Te": {"name": "外倾思考", "strong": "讲效率、重结果，擅长组织和推进事情", "blind": "不太擅长定计划、排优先级，想法容易停留在脑子里不落地"}, "Ti": {"name": "内倾思考", "strong": "追求逻辑自洽，喜欢搞懂原理，独立思考", "blind": "不太会去检查逻辑漏洞，容易直接接受别人的结论"}, "Fe": {"name": "外倾情感", "strong": "善于感知群体氛围，照顾他人感受，维护和谐", "blind": "不太容易察觉别人的情绪和场合气氛，可能无意中让人不舒服"}, "Fi": {"name": "内倾情感", "strong": "清楚自己的价值观和真实感受，忠于自己", "blind": "不太容易当下察觉自己的情绪，常常事后才明白自己为什么不舒服"}}, "likert": [["Se", "我很容易注意到周围环境的细节变化，比如谁换了发型、房间里多了什么。", false], ["Se", "面对突发情况，我通常能马上反应、直接动手处理。", false], ["Se", "我喜欢能调动感官的体验，比如美食、运动、刺激的活动。", false], ["Se", "比起计划未来，我更享受当下正在发生的事。", false], ["Se", "学新东西时，我最喜欢直接上手试，而不是先看说明。", false], ["Se", "我经常沉浸在自己的思绪里，会忽略身边正在发生的事。", true], ["Si", "我习惯用自己熟悉的方式和流程做事，觉得这样最踏实。", false], ["Si", "我能清楚地记得过去经历的细节，包括当时身体的感受。", false], ["Si", "遇到新情况时，我会自然地拿它和以前的经验做对比。", false], ["Si", "规律的作息和固定的习惯让我感到安心。", false], ["Si", "别人突然改变已经说好的安排，会让我很不舒服。", false], ["Si", "我不喜欢按常规来，同一件事每次都想换个方式做。", true], ["Ne", "聊天时我的话题常常跳来跳去，一个想法会引出好多新想法。", false], ["Ne", "看到一样东西，我会很自然地想到它还能有哪些别的用法。", false], ["Ne", "我喜欢头脑风暴，可能性越多我越兴奋。", false], ["Ne", "我对新鲜事物很好奇，经常同时对很多东西感兴趣。", false], ["Ne", "别人说一件事时，我脑子里很快会冒出“如果……会怎样”。", false], ["Ne", "我更喜欢用已经证明可行的方法，不太愿意去想各种假设。", true], ["Ni", "我常常一下子“看穿”一件事的本质，但很难说清自己是怎么想到的。", false], ["Ni", "我经常能预感事情会怎么发展，而且结果常常被我说中。", false], ["Ni", "我喜欢把看似无关的信息串在一起，找出背后的核心规律。", false], ["Ni", "比起很多个选项，我更想找到那个唯一“对”的方向。", false], ["Ni", "我会花很多时间在脑子里推演未来可能发生的情景。", false], ["Ni", "我不太去想事情背后的深层含义，看到什么就是什么。", true], ["Te", "做事时我最关心效率，会想办法用最快的方式达成目标。", false], ["Te", "我习惯给事情定计划、排优先级、设截止时间。", false], ["Te", "我判断一个方法好不好，主要看它能不能带来实际结果。", false], ["Te", "团队一团乱时，我会忍不住站出来分配任务、组织大家。", false], ["Te", "做决定时，我喜欢依靠数据、事实和可以衡量的标准。", false], ["Te", "只要道理想通了，事情最后有没有落地对我来说不太重要。", true], ["Ti", "别人给我一个结论时，我会先想搞懂背后的道理，才愿意接受。", false], ["Ti", "我喜欢给概念下精确的定义，用词不准确会让我很在意。", false], ["Ti", "我会在脑子里反复检查一个想法有没有逻辑漏洞。", false], ["Ti", "我喜欢搞懂事物的原理，哪怕这对实际生活没什么用。", false], ["Ti", "权威的说法如果逻辑上说不通，我不会因为它是权威就相信。", false], ["Ti", "只要方法管用，我不在乎它背后的原理是什么。", true], ["Fe", "走进一个聚会，我很快就能感觉到谁有点不自在，谁和谁关系紧张。", false], ["Fe", "群体里有人被冷落时，我会忍不住想办法把他拉进话题。", false], ["Fe", "做决定前，我会自然地先想“这样做大家会怎么想，会不会有人不舒服”。", false], ["Fe", "朋友情绪低落时，我的心情也很容易跟着受影响。", false], ["Fe", "我说话时会根据对方是谁、在什么场合，自动调整语气和措辞。", false], ["Fe", "只要我说的是对的，别人听了舒不舒服不是我主要考虑的事。", true], ["Fi", "我心里有一套很清楚的价值标准，违背它的事我不会做。", false], ["Fi", "我很在意自己做的事是否真实地表达了自己。", false], ["Fi", "我的感受很深，但通常不会轻易在别人面前表现出来。", false], ["Fi", "就算大家都认同，只要我觉得不对，我也不会跟着做。", false], ["Fi", "我能分辨自己细微的情绪，知道自己真正在乎的是什么。", false], ["Fi", "我常常当下不知道自己为什么不舒服，要过一段时间才意识到自己当时是什么情绪。", true]], "choices": [["朋友在饭桌上讲了一个明显错误的“常识”，大家都在附和：", ["先不说破，免得他当众尴尬，之后再私下提", "Fe"], ["直接指出来，错的就是错的", "Ti"]], ["你更容易因为哪种情况感到不舒服：", ["群体里气氛很僵，大家都不说话", "Fe"], ["一个说法前后矛盾，大家却都没发现", "Ti"]], ["评价一个方案，你的第一反应是看：", ["大家能不能接受，执行起来会不会伤到谁", "Fe"], ["它的逻辑是否严密，有没有漏洞", "Ti"]], ["吵架时，你更在意的是：", ["先把关系修复好，谁对谁错之后再说", "Fe"], ["先把事情讲清楚，搞明白哪里出了问题", "Ti"]], ["选工作时，你更看重：", ["发展前景、收入、能学到的实际技能", "Te"], ["自己喜不喜欢，符不符合自己的价值观", "Fi"]], ["做决定卡住时，你会：", ["列出利弊，对比数据和事实", "Te"], ["静下来问自己心里真正想要什么", "Fi"]], ["别人评价你时，你更在意的是：", ["你的能力和做出的成果有没有被认可", "Te"], ["真实的你有没有被理解", "Fi"]], ["团队决定了一个效率很高、但你觉得不太对的方案：", ["先执行，结果最重要", "Te"], ["说出你的保留意见，不想违背自己的原则", "Fi"]], ["旅行时你更享受：", ["随走随玩，尽情体验当地的美食和风景", "Se"], ["看到的东西让你联想到很多，思考这次旅行的意义", "Ni"]], ["听别人讲一件事时，你更注意：", ["他讲的具体细节和画面", "Se"], ["他背后真正想表达的意思", "Ni"]], ["对于未来，你更像：", ["计划赶不上变化，到时候看情况再说", "Se"], ["心里有一个明确的长期方向", "Ni"]], ["有空闲的时候，你更想：", ["找点事做，出去走走、动一动", "Se"], ["发会儿呆，在脑子里想想事情", "Ni"]], ["做饭时你更像：", ["照着熟悉的做法来，稳定好吃", "Si"], ["随手搭配新组合，试试会怎样", "Ne"]], ["学一样新东西，你会：", ["按部就班，从基础开始一步步来", "Si"], ["先挑感兴趣的部分看，到处跳着联系", "Ne"]], ["选餐厅吃饭时，你更倾向于：", ["去常去的那家，知道它好吃", "Si"], ["试一家没去过的新店", "Ne"]], ["回忆一段过去的经历，你记得更清楚的是：", ["当时的具体细节和感受", "Si"], ["当时脑子里冒出来的各种想法", "Ne"]]], "types": {"INTJ": ["Ni", "Te", "Fi", "Se"], "INTP": ["Ti", "Ne", "Si", "Fe"], "ENTJ": ["Te", "Ni", "Se", "Fi"], "ENTP": ["Ne", "Ti", "Fe", "Si"], "INFJ": ["Ni", "Fe", "Ti", "Se"], "INFP": ["Fi", "Ne", "Si", "Te"], "ENFJ": ["Fe", "Ni", "Se", "Ti"], "ENFP": ["Ne", "Fi", "Te", "Si"], "ISTJ": ["Si", "Te", "Fi", "Ne"], "ISFJ": ["Si", "Fe", "Ti", "Ne"], "ESTJ": ["Te", "Si", "Ne", "Fi"], "ESFJ": ["Fe", "Si", "Ne", "Ti"], "ISTP": ["Ti", "Se", "Ni", "Fe"], "ISFP": ["Fi", "Se", "Ni", "Te"], "ESTP": ["Se", "Ti", "Fe", "Ni"], "ESFP": ["Se", "Fi", "Te", "Ni"]}, "roles": [["第一功能 · 主导", "司机", "你最核心、最自信、发展得最早的功能。几乎每件事你都会先用它去看、去判断，用起来毫不费力，也是别人眼中最典型的“你”。"], ["第二功能 · 辅助", "副驾驶", "支持主导功能、帮你保持平衡。主导是内倾时它负责对外，主导是外倾时它负责对内。你也用得比较熟练，成年以后会越来越成熟。"], ["第三功能 · 第三", "小孩", "还在成长中的功能。放松、玩乐时会用到它，用起来有趣但不太稳定。有时人会躲进这个功能里，逃避真正该用辅助功能去面对的事。"], ["第四功能 · 劣势", "婴儿", "最弱、最不熟练的功能，通常也是你的盲点。平时很少用，压力很大时却会失控地冒出来，让你变得不像自己。慢慢学会接纳和使用它，是人格成长中最重要的一课。"]]};
+
+// 每种类型的原创形象：表情、昵称
+const MASCOTS = {
+  INTJ: ["🦉", "远谋者"],        INTP: ["🐙", "原理探究者"],
+  ENTJ: ["🦁", "统帅"],          ENTP: ["🦊", "点子发明家"],
+  INFJ: ["🦌", "洞察者"],        INFP: ["🦋", "理想守护者"],
+  ENFJ: ["🐬", "引路人"],        ENFP: ["🦜", "灵感火花"],
+  ISTJ: ["🦫", "可靠基石"],      ISFJ: ["🐘", "温柔守望者"],
+  ESTJ: ["🐺", "秩序管理者"],    ESFJ: ["🐶", "热心凝聚者"],
+  ISTP: ["🐈", "冷静工匠"],      ISFP: ["🦢", "自在艺术家"],
+  ESTP: ["🐆", "行动冒险家"],    ESFP: ["🦚", "气氛担当"],
+};
+const TYPE_ORDER = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP",
+                    "ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
+const SLOT_POINTS = [100, 75, 50, 25];
+const LIKERT_LABELS = ["完全不像我", "不太像", "一般", "比较像", "非常像我"];
+const app = document.getElementById("app");
+
+function group(t) {
+  if (t[1] === "N") return t[2] === "T" ? "NT" : "NF";
+  return t[3] === "J" ? "SJ" : "SP";
+}
+function fname(f) { return `${f} ${D.info[f].name}`; }
+function shuffle(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function correlation(xs, ys) {
+  const n = xs.length;
+  const mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+  let top = 0, bx = 0, by = 0;
+  for (let i = 0; i < n; i++) { top += (xs[i] - mx) * (ys[i] - my); bx += (xs[i] - mx) ** 2; by += (ys[i] - my) ** 2; }
+  if (bx === 0 || by === 0) return 0;
+  return top / Math.sqrt(bx * by);
+}
+
+// ---------------- 首页 ----------------
+function showHome() {
+  const typeButtons = TYPE_ORDER.map(t => `
+    <button class="type-btn group-${group(t)}" data-type="${t}">
+      <span class="emoji">${MASCOTS[t][0]}</span>
+      <span class="code">${t}</span>
+      <span class="nick">${MASCOTS[t][1]}</span>
+    </button>`).join("");
+
+  app.innerHTML = `
+    <section class="intro">
+      <span class="eyebrow">COGNITIVE FUNCTIONS</span>
+      <h1>认知功能测试</h1>
+      <p class="muted">不用 E/I、S/N 这种非此即彼的二分法，而是分别测量 Se、Si、Ne、Ni、Te、Ti、Fe、Fi 八个认知功能你各用了多少，找出你最惯用的思维方式和最容易忽略的盲点，再匹配最接近的类型。</p>
+      <div class="facts">
+        <div class="fact"><b>64 题</b><span class="muted">48 道情景自评 + 16 道二选一</span></div>
+        <div class="fact"><b>约 10 分钟</b><span class="muted">按第一反应作答就好</span></div>
+        <div class="fact"><b>8 个功能</b><span class="muted">看惯用功能，也看盲点</span></div>
+      </div>
+      <div class="row"><button class="primary" id="start">开始测试</button></div>
+    </section>
+    <section class="panel">
+      <h2>已经知道自己的类型？</h2>
+      <p class="muted">点你的类型，直接看它的 4 个主要功能、惯用功能和盲点。</p>
+      <div class="type-grid">${typeButtons}</div>
+    </section>
+    <p class="note">基于荣格认知功能理论的自我了解工具，不是严格的心理学诊断。</p>`;
+
+  document.getElementById("start").onclick = startTest;
+  app.querySelectorAll(".type-btn").forEach(b => b.onclick = () => showKnownType(b.dataset.type));
+  window.scrollTo(0, 0);
+}
+
+// ---------------- 答题 ----------------
+let questions = [], answers = [], idx = 0;
+
+function startTest() {
+  const part1 = shuffle(D.likert).map(([func, text, reverse]) => ({ kind: "likert", func, text, reverse }));
+  const part2 = shuffle(D.choices).map(([text, a, b]) => ({ kind: "choice", text, a, b }));
+  questions = part1.concat(part2);
+  answers = new Array(questions.length).fill(null);
+  idx = 0;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[idx];
+  const total = questions.length;
+  const part = q.kind === "likert" ? "第一部分 · 情景自评" : "第二部分 · 二选一";
+  let options;
+  if (q.kind === "likert") {
+    options = `<div class="likert">${LIKERT_LABELS.map((lab, i) => `
+      <button data-v="${i + 1}" class="${answers[idx] === i + 1 ? "selected" : ""}">
+        <span class="num">${i + 1}</span><span class="lab">${lab}</span>
+      </button>`).join("")}</div>
+      <p class="hint">也可以直接按键盘上的数字 1–5。</p>`;
+  } else {
+    options = `<div class="choice">
+      <button data-v="A" class="${answers[idx] === "A" ? "selected" : ""}"><span class="letter">A</span><span>${q.a[0]}</span></button>
+      <button data-v="B" class="${answers[idx] === "B" ? "selected" : ""}"><span class="letter">B</span><span>${q.b[0]}</span></button>
+    </div>
+    <p class="hint">也可以直接按键盘上的 A 或 B。</p>`;
+  }
+
+  app.innerHTML = `
+    <section class="panel">
+      <div class="progress-text"><span>${part}</span><span>${idx + 1} / ${total}</span></div>
+      <div class="track"><div class="fill" style="width:${(idx / total) * 100}%"></div></div>
+      <p class="question">${q.text}</p>
+      ${options}
+      <div class="row">
+        <button class="ghost" id="back" ${idx === 0 ? "disabled" : ""}>← 上一题</button>
+        <button class="ghost" id="quit">退出测试</button>
+      </div>
+    </section>`;
+
+  app.querySelectorAll("[data-v]").forEach(b => b.onclick = () => answer(b.dataset.v));
+  document.getElementById("back").onclick = () => { if (idx > 0) { idx--; renderQuestion(); } };
+  document.getElementById("quit").onclick = showHome;
+}
+
+function answer(v) {
+  const q = questions[idx];
+  answers[idx] = q.kind === "likert" ? Number(v) : v;
+  idx++;
+  if (idx >= questions.length) showResult();
+  else renderQuestion();
+}
+
+document.addEventListener("keydown", e => {
+  if (!questions.length || idx >= questions.length || !document.querySelector(".question")) return;
+  const q = questions[idx];
+  const k = e.key.toUpperCase();
+  if (q.kind === "likert" && ["1","2","3","4","5"].includes(k)) answer(k);
+  if (q.kind === "choice" && (k === "A" || k === "B")) answer(k);
+});
+
+// ---------------- 计分 ----------------
+function computeScores() {
+  const raw = {};
+  D.functions.forEach(f => raw[f] = 0);
+  questions.forEach((q, i) => {
+    if (q.kind === "likert") {
+      const v = q.reverse ? 6 - answers[i] : answers[i];
+      raw[q.func] += v;
+    } else {
+      const f = answers[i] === "A" ? q.a[1] : q.b[1];
+      raw[f] += 2;
+    }
+  });
+  // 自评 6–30 分 + 二选一 0–8 分，总范围 6–38，换算成 0–100
+  const scores = {};
+  D.functions.forEach(f => scores[f] = Math.round((raw[f] - 6) / 32 * 100));
+  return scores;
+}
+
+function matchTypes(scores) {
+  const user = D.functions.map(f => scores[f]);
+  const result = TYPE_ORDER.map(t => {
+    const stack = D.types[t];
+    const template = D.functions.map(f => stack.includes(f) ? SLOT_POINTS[stack.indexOf(f)] : 0);
+    return { type: t, r: correlation(user, template) };
+  });
+  return result.sort((a, b) => b.r - a.r);
+}
+
+// ---------------- 结果页 ----------------
+function heroBlock(t, subtitle, percent) {
+  const [emoji, nick] = MASCOTS[t];
+  return `
+    <section class="panel">
+      <span class="eyebrow">${subtitle}</span>
+      <div class="hero" style="--g: var(--${group(t).toLowerCase()})">
+        <div class="medal" aria-hidden="true">${emoji}</div>
+        <div>
+          <div class="code">${t}</div>
+          <div class="nick">${nick}</div>
+          <div class="stack">${D.types[t].join(" → ")}${percent !== undefined ? `　·　匹配度 ${percent}%` : ""}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function strengthsBlock(top, low, defs) {
+  return `
+    <div class="two">
+      <div class="box good">
+        <h3>惯用功能</h3>
+        <p class="def">${defs ? "你最自然、最常用的思维方式。用它时不费力，甚至不会察觉自己在用，也是别人最容易看到的长处。" : ""}</p>
+        ${top.map(f => `<p class="item"><b>${fname(f)}</b>${D.info[f].strong}</p>`).join("")}
+      </div>
+      <div class="box bad">
+        <h3>盲点</h3>
+        <p class="def">${defs ? "你最少用、最不熟悉的思维方式。不是“不会”，而是平时很少调动它，容易忽略这方面的信息，压力大时也容易在这里出问题。" : ""}</p>
+        ${low.map(f => `<p class="item"><b>${fname(f)}</b>${D.info[f].blind}</p>`).join("")}
+      </div>
+    </div>`;
+}
+
+function analysisBlock(t, scores) {
+  const stack = D.types[t];
+  const shadow = D.functions.filter(f => !stack.includes(f));
+  const roles = D.roles.map(([title, nickname, meaning], i) => {
+    const f = stack[i];
+    const detail = i < 3 ? `擅长：${D.info[f].strong}` : `容易出现的问题：${D.info[f].blind}`;
+    const score = scores ? `<span class="score">　你的得分 ${scores[f]}</span>` : "";
+    return `
+      <div class="role ${i === 3 ? "inferior" : ""}">
+        <div class="slot"><b>${i + 1}</b><span>${nickname}</span></div>
+        <div>
+          <p class="title">${title.split("·")[1].trim()}功能　${fname(f)}${score}</p>
+          <p class="muted">${meaning}</p>
+          <p>${detail}</p>
+        </div>
+      </div>`;
+  }).join("");
+
+  return `
+    <section class="panel">
+      <h2>什么是认知功能</h2>
+      <p>认知功能是你“接收信息”和“做出判断”的方式，一共 8 个，每个都分外倾（e，朝向外部世界）和内倾（i，朝向内心世界）。</p>
+      <div class="legend">
+        <div><b>Se · Si</b>　看具体事实和经验</div>
+        <div><b>Ne · Ni</b>　看可能性和深层含义</div>
+        <div><b>Te · Ti</b>　用逻辑做判断</div>
+        <div><b>Fe · Fi</b>　用情感和价值做判断</div>
+      </div>
+      <p>每个人其实 8 个功能都会用，但不会平均使用。每种类型有 4 个<b>主要功能</b>，排出固定的先后顺序，决定了你最自然的思考方式。</p>
+    </section>
+    <section class="panel">
+      <h2>${t} 的 4 个主要功能</h2>
+      <div class="roles">${roles}</div>
+    </section>
+    <section class="panel">
+      <h2>另外 4 个：阴影功能</h2>
+      <div class="chips">${shadow.map(f => `<span class="chip">${fname(f)}</span>`).join("")}</div>
+      <p>对 ${t} 来说，这 4 个功能大多在潜意识里运作，平时很少主动用，也不容易察觉自己在用。它们往往在压力大、和人起冲突或特别累的时候冒出来，让你觉得“这不像平时的我”。阴影功能不是“不会”，只是不自然、用起来费力，也容易用得不成熟。</p>
+    </section>`;
+}
+
+function showResult() {
+  const scores = computeScores();
+  const ranked = D.functions.slice().sort((a, b) => scores[b] - scores[a]);
+  const matches = matchTypes(scores);
+  const best = matches[0].type;
+  const pct = m => Math.max(0, Math.round(m.r * 100));
+  const top = ranked.slice(0, 2), low = ranked.slice(-2).reverse();
+
+  const bars = ranked.map(f => {
+    const cls = top.includes(f) ? "top" : low.includes(f) ? "low" : "";
+    return `<div class="bar-row">
+      <span class="name"><b>${f}</b>${D.info[f].name}</span>
+      <div class="bar-bg"><div class="bar ${cls}" style="width:${Math.max(scores[f], 2)}%"></div></div>
+      <span class="val">${scores[f]}</span>
+    </div>`;
+  }).join("");
+
+  const judging = ["Te", "Ti", "Fe", "Fi"];
+  const [f1, f2] = ranked;
+  const odd = (judging.includes(f1) === judging.includes(f2)) || f1[1] === f2[1];
+  const warn = odd ? `<p class="warn">你最强的两个功能是 ${f1} 和 ${f2}。按照理论，主导和辅助通常是一个判断功能（T/F）加一个感知功能（S/N），而且一内一外。你的结果可能介于几种类型之间，也可能作答时更多按“理想中的自己”在选，可以结合下面的前三名和自己的实际情况判断。</p>` : "";
+
+  const others = matches.slice(1, 3).map(m => `
+    <button class="mini" data-type="${m.type}"><span class="emoji">${MASCOTS[m.type][0]}</span>
+      <span><b>${m.type}</b> ${MASCOTS[m.type][1]}</span><span class="pct">${pct(m)}%</span></button>`).join("");
+
+  const summary = `我的认知功能测试结果：最接近 ${best}（${MASCOTS[best][1]}），匹配度 ${pct(matches[0])}%。惯用功能 ${top.join("、")}，盲点 ${low.join("、")}。`;
+
+  app.innerHTML = `
+    ${heroBlock(best, "和你最接近的类型", pct(matches[0]))}
+    <section class="panel">
+      <h2>你的认知功能分布</h2>
+      <div class="chips"><span class="chip">深色：惯用功能</span><span class="chip weak">红色：盲点</span></div>
+      <div class="bars">${bars}</div>
+      ${warn}
+    </section>
+    <section class="panel">
+      <h2>惯用功能和盲点</h2>
+      ${strengthsBlock(top, low, true)}
+    </section>
+    <section class="panel">
+      <h2>其他接近的类型</h2>
+      <p class="muted">把你 8 个功能的分数和 16 种类型的标准顺序对比，越像匹配度越高。点开可以看那个类型的分析。</p>
+      <div class="others">${others}</div>
+    </section>
+    ${analysisBlock(best, scores)}
+    <div class="row">
+      <button class="primary" id="again">重新测试</button>
+      <button id="copy">复制结果分享给朋友</button>
+      <button class="ghost" id="home">回到首页</button>
+      <span class="copied" id="copied"></span>
+    </div>
+    <p class="note">这是自我报告问卷，结果反映的是你怎么看自己，适合用来了解自己，不是严格的心理学诊断。</p>`;
+
+  document.getElementById("again").onclick = startTest;
+  document.getElementById("home").onclick = showHome;
+  document.getElementById("copy").onclick = async () => {
+    const msg = document.getElementById("copied");
+    try { await navigator.clipboard.writeText(summary); msg.textContent = "已复制"; }
+    catch (e) { msg.textContent = summary; }
+  };
+  app.querySelectorAll(".mini").forEach(b => b.onclick = () => showKnownType(b.dataset.type));
+  window.scrollTo(0, 0);
+}
+
+function showKnownType(t) {
+  const stack = D.types[t];
+  app.innerHTML = `
+    ${heroBlock(t, "类型分析")}
+    <section class="panel">
+      <h2>惯用功能和盲点</h2>
+      ${strengthsBlock(stack.slice(0, 2), [stack[3]], true)}
+      <p class="muted">成长建议：有意识地练习 ${fname(stack[3])}。不用变成擅长，只要在关键时刻记得用它检查一下，就能补上 ${t} 最容易看不见的那一块。</p>
+    </section>
+    ${analysisBlock(t)}
+    <div class="row">
+      <button class="primary" id="start">做一次完整测试</button>
+      <button class="ghost" id="home">回到首页</button>
+    </div>`;
+  document.getElementById("start").onclick = startTest;
+  document.getElementById("home").onclick = showHome;
+  window.scrollTo(0, 0);
+}
+
+showHome();
+</script>
+</body>
+</html>
